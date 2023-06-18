@@ -47,19 +47,10 @@ describe('Wave Contract', function () {
     let cost = 0;
     console.log("繰り返しスタート");
     for (let i = 0; i < allWaves.length; i++) {
-      console.log(i);
-      console.log(allWaves[i].seed);
       if (allWaves[i].seed <= 50) {
         cost += 0.0001;
       }
     }
-
-    console.log("aaaaaaaaaaaaaaaaa");
-    console.log(cost);
-    console.log(contractBalanceBefore);
-    console.log("aaaaaaaaaaaaaaaaa");
-    console.log("aaaaaaaaaaaaaaaaa");
-
 
     /*
      *メッセージの送信をテスト

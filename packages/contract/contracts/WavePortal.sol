@@ -14,6 +14,7 @@ contract WavePortal {
         address waver;
         string message;
         uint256 timestamp;
+        uint256 seed;
     }
 
     Wave[] waves;
@@ -28,15 +29,15 @@ contract WavePortal {
         /*
          * 初期シードの設定
          */
-        seed = (block.timestamp + block.difficulty) % 100;
+        seed = (block.timestamp + block.prevrandao) % 100;
     }
 
     function wave(string memory _message) public {
         /*
-         * 現在ユーザーがwaveを送信している時刻と、前回waveを送信した時刻が15分以上離れていることを確認。
+         * 現在ユーザーがwaveを送信している時刻と、前回waveを送信した時刻が一定時間離れていることを確認。
          */
         require(
-            lastWavedAt[msg.sender] + 15 minutes < block.timestamp,
+            lastWavedAt[msg.sender] + 60 seconds < block.timestamp,
             "Wait 15m"
         );
 
@@ -48,12 +49,12 @@ contract WavePortal {
         totalWaves += 1;
         console.log("%s has waved!", msg.sender);
 
-        waves.push(Wave(msg.sender, _message, block.timestamp));
-
         /*
          *  ユーザーのために乱数を設定
          */
-        seed = (block.difficulty + block.timestamp + seed) % 100;
+        seed = (block.prevrandao + block.timestamp + seed) % 100;
+
+        waves.push(Wave(msg.sender, _message, block.timestamp, seed));
 
         if (seed <= 50) {
             console.log("%s won!", msg.sender);
@@ -76,5 +77,9 @@ contract WavePortal {
 
     function getTotalWaves() public view returns (uint256) {
         return totalWaves;
+    }
+
+    function canWave() public view returns (bool) {
+        return (lastWavedAt[msg.sender] + 60 seconds) < block.timestamp;
     }
 }

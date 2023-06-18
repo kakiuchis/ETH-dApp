@@ -14,7 +14,7 @@ const App = () => {
   const [allWaves, setAllWaves] = useState([]);
   console.log("currentAccount: ", currentAccount);
   /* デプロイされたコントラクトのアドレスを保持する変数を作成 */
-  const contractAddress = "0xcb08596af55EE2Ae630235603D3492617082c565";
+  const contractAddress = "0xfc137FE4a13b304f158519A6b655bCA8e28A7938";
   /* コントラクトからすべてのwavesを取得するメソッドを作成 */
   /* ABIの内容を参照する変数を作成 */
   const contractABI = abi.abi;
@@ -81,6 +81,7 @@ const App = () => {
       );
       wavePortalContract.on("NewWave", onNewWave);
     }
+
     /*メモリリークを防ぐために、NewWaveのイベントを解除します*/
     return () => {
       if (wavePortalContract) {
@@ -113,7 +114,7 @@ const App = () => {
       console.log(error);
     }
   };
-  
+
   /* connectWalletメソッドを実装 */
   const connectWallet = async () => {
     try {
@@ -150,15 +151,22 @@ const App = () => {
         let contractBalance = await provider.getBalance(wavePortalContract.address);
         console.log("Contract balance:", ethers.utils.formatEther(contractBalance));
         /* コントラクトに👋（wave）を書き込む */
-        const waveTxn = await wavePortalContract.wave(messageValue, {
-          gasLimit: 300000,
-        });
-        console.log("Mining...", waveTxn.hash);
-        await waveTxn.wait();
-        console.log("Mined -- ", waveTxn.hash);
+        try {
+          const canWave = await wavePortalContract.canWave();
+          if (!canWave) {
+            alert('前回から60秒以上待ちましょう😊');
+            return;
+          }
+          const waveTxn = await wavePortalContract.wave(messageValue, { gasLimit: 300000 });
+          console.log("Mining...", waveTxn.hash);
+          await waveTxn.wait();
+          console.log("Mined -- ", waveTxn.hash);
+        } catch (error) {
+          console.log(error);
+        }
         count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
-        // et contractBalance = await provider.getBalance(wavePortalContract.address);
+
         let contractBalance_post = await provider.getBalance(
           wavePortalContract.address
         );
@@ -167,6 +175,7 @@ const App = () => {
         if (contractBalance_post.lt(contractBalance)) {
           /* 減っていたら下記を出力 */
           console.log("User won ETH!");
+          alert("ETHをゲット！");
         } else {
           console.log("User didn't win ETH.");
         }
@@ -197,11 +206,11 @@ const App = () => {
           WELCOME!
         </div>
         <div className="bio">
-          イーサリアムウォレットを接続して、メッセージを作成したら、
+          イーサリアムウォレットを接続してメッセージとともに
           <span role="img" aria-label="hand-wave">
             👋
           </span>
-          を送ってください
+          してね
           <span role="img" aria-label="shine">
             ✨
           </span>
@@ -219,7 +228,7 @@ const App = () => {
         {/* waveボタンにwave関数を連動 */}
         {currentAccount && (
           <button className="waveButton" onClick={wave}>
-            Wave at Me
+            👋Wave👋
           </button>
         )}
         {/* メッセージボックスを実装*/}
