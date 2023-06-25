@@ -18,8 +18,10 @@ const App = () => {
   /* コントラクトからすべてのwavesを取得するメソッドを作成 */
   /* ABIの内容を参照する変数を作成 */
   const contractABI = abi.abi;
-   /* Miningステータス管理 */
+  /* Miningステータス管理 */
   const [isMining, setIsMining] = useState(false);
+  /* ネットワーク接続ステータス管理 */
+  const [currentNetwork, setCurrentNetwork] = useState("");
 
   const getAllWaves = async () => {
     const { ethereum } = window;
@@ -115,8 +117,10 @@ const App = () => {
         console.log(network.chainId);
         if (network.chainId !== 11155111) {
           alert("Please connect to the Sepolia network.");
+          setCurrentNetwork(network.chainId)
           return;
         }
+        setCurrentNetwork(11155111);
 
         getAllWaves();
       } else {
@@ -225,6 +229,12 @@ const App = () => {
         window.location.reload(); 
       });
     }
+
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', () => {
+        window.location.reload(); 
+      });
+    }
   }, []);
 
   return (
@@ -237,14 +247,13 @@ const App = () => {
           WELCOME!
         </div>
         <div className="bio">
-          ウォレットをSepoliaに接続して
-          <span role="img" aria-label="hand-wave">
-            👋
-          </span>
-          してね
-          <span role="img" aria-label="shine">
-            ✨
-          </span>
+          {console.log("currentNetwork: " + currentNetwork)}
+          {currentNetwork === "" 
+              ? <>"ウォレットを接続してね"<span role="img" aria-label="shine">✨</span></>
+              : currentNetwork !== 11155111 
+                  ? <>"Sepoliaに切り替えてね"<span role="img" aria-label="shine">✨</span></>
+                  : <>"Wave"<span role="img" aria-label="hand-wave">👋</span>"してね"<span role="img" aria-label="shine">✨</span></>
+          }
         </div>
         <br />
         {/* ウォレットコネクトのボタンを実装 */}
@@ -257,13 +266,13 @@ const App = () => {
           <button className="waveButton">Wallet Connected</button>
         )}
         {/* waveボタンにwave関数を連動 */}
-        {currentAccount && (
+        {currentAccount && currentNetwork === 11155111 && (
           <button className="waveButton" onClick={wave}>
             👋Wave👋
           </button>
         )}
         {/* メッセージボックスを実装*/}
-        {currentAccount && (
+        {currentAccount && currentNetwork === 11155111 && (
           <textarea
             name="messageArea"
             placeholder="メッセージはこちら"
@@ -278,7 +287,7 @@ const App = () => {
         { isMining ? <p className="blinking-text">マイニング中...</p> : null }
 
         {/* 履歴を表示する */}
-        {currentAccount &&
+        {currentAccount && 
           allWaves
             .slice(0)
             .reverse()
