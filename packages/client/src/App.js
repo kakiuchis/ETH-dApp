@@ -237,7 +237,7 @@ const App = () => {
           WELCOME!
         </div>
         <div className="bio">
-          イーサリアムウォレットを接続してメッセージとともに
+          ウォレットをSepoliaに接続して
           <span role="img" aria-label="hand-wave">
             👋
           </span>
