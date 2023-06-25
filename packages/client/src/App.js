@@ -18,6 +18,8 @@ const App = () => {
   /* コントラクトからすべてのwavesを取得するメソッドを作成 */
   /* ABIの内容を参照する変数を作成 */
   const contractABI = abi.abi;
+   /* Miningステータス管理 */
+  const [isMining, setIsMining] = useState(false);
 
   const getAllWaves = async () => {
     const { ethereum } = window;
@@ -106,6 +108,16 @@ const App = () => {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
         setCurrentAccount(account);
+
+        /* ネットワークがsepoliaであるかどうかを確認する関数 */
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const network = await provider.getNetwork();
+        console.log(network.chainId);
+        if (network.chainId !== 11155111) {
+          alert("Please connect to the Sepolia network.");
+          return;
+        }
+
         getAllWaves();
       } else {
         console.log("No authorized account found");
@@ -157,12 +169,24 @@ const App = () => {
             alert('前回から60秒以上待ちましょう😊');
             return;
           }
+
+          /* StateをMining中に変更 */
+          setIsMining(true);
           const waveTxn = await wavePortalContract.wave(messageValue, { gasLimit: 300000 });
           console.log("Mining...", waveTxn.hash);
           await waveTxn.wait();
           console.log("Mined -- ", waveTxn.hash);
+
+          /* StateをMining終了に変更 */
+          setIsMining(false);
+
+          /* メッセージボックスを空に戻す */
+          setMessageValue("");
         } catch (error) {
           console.log(error);
+
+          /* StateをMining終了に変更 */
+          setIsMining(false);
         }
         count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
@@ -190,10 +214,17 @@ const App = () => {
       console.log(error);
     }
   };
-
+  
   /* WEBページがロードされたときにcheckIfWalletIsConnected()を実行 */
   useEffect(() => {
     checkIfWalletIsConnected();
+
+    /* ネットワークが変更されたら、ページを再レンダリング行 */
+    if (window.ethereum) {
+      window.ethereum.on('chainChanged', () => {
+        window.location.reload(); 
+      });
+    }
   }, []);
 
   return (
@@ -242,6 +273,10 @@ const App = () => {
             onChange={(e) => setMessageValue(e.target.value)}
           />
         )}
+
+        {/* マイニング中の表示 */}
+        { isMining ? <p className="blinking-text">マイニング中...</p> : null }
+
         {/* 履歴を表示する */}
         {currentAccount &&
           allWaves
